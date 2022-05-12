@@ -11,8 +11,12 @@ class DropBoxController {
         this.progressBarEl = this.snackModalEl.querySelector('.mc-progress-bar-fg');
         this.namefileEl = this.snackModalEl.querySelector('.filename');
         this.timeleftEl = this.snackModalEl.querySelector('.timeleft');
+        
+        this.listFileEl = document.querySelector('#list-of-files-and-directories');
+        
         this.initEvents();
         this.connectFirebase();
+        this.readFiles();
     }
 
 
@@ -164,7 +168,7 @@ class DropBoxController {
 
     getFileIcon(file) {
 
-        switch (file.type) {
+        switch (file.mimetype) {
 
             case 'folder':
                 return `
@@ -332,13 +336,82 @@ class DropBoxController {
         }
     }
 
-    getFileView(file) {
-        return `
-            <li>
+    getFileView(file, key) {
+
+        let li = document.createElement('li');
+        li.dataset.key = key;
+
+        li.innerHTML =  `
                 ${this.getFileIcon(file)}
-                <div class="name text-center">${file.name} </div>
-            </li>
-        `;
+                <div class="name text-center">${file.originalFilename} </div>
+                `;
+        this.initEventsLi(li);
+        return li;
+    }
+
+    readFiles(){
+        
+        this.getFirebaseRef().on('value',snapshot=>{
+            
+            this.listFileEl.innerHTML = '';
+             
+            snapshot.forEach(snapshotItem=>{
+
+                let key = snapshotItem.key;
+                let data = snapshotItem.val();
+                
+                this.listFileEl.appendChild(this.getFileView(data, key));
+
+            });
+        })
+    }
+
+    initEventsLi(li){
+        li.addEventListener('click',e=>{
+            
+            if(e.shiftKey){
+
+                let firstLi = this.listFileEl.querySelector('.selected');
+
+                if(firstLi){
+                    
+                    let indexStart;
+                    let indexEnd;
+                    let lis = li.parentElement.childNodes;
+
+                    // buscando todos os elementos filhos de uma lista
+                    lis.forEach((el,index)=>{
+
+                        if(firstLi === el) indexStart =index;
+                        if(li === el) indexEnd = index;
+
+                    });
+
+                    let index = [indexStart, indexEnd].sort();
+
+                    lis.forEach((el,i)=>{
+                        
+                        if(i >= index[0] && i <= index[1])
+                            el.classList.add('selected');
+                    });
+
+                    return true;
+                }
+            }
+
+            if(!e.ctlrKey){
+                
+                this.listFileEl.querySelectorAll('li.selected')
+                .forEach(el=>{
+                
+                    el.classList.remove('selected');
+                
+                })
+            }
+            
+            
+            li.classList.toggle('selected');
+        });
     }
 
 }
