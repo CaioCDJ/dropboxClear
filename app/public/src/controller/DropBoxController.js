@@ -24,20 +24,58 @@ class DropBoxController {
 
         this.inputFilesEl.addEventListener('change', event => {
 
+            this.btnSendFileEl.disabled = true;
             this.UploadTask(event.target.files).then(responses => {
                 responses.forEach(resp=>{
-                    console.log(resp.files['input-file']);
+                    
                     this.getFirebaseRef().push().set(resp.files['input-file']);
                 });
 
-                this.modalShow(false);
+                this.uploadComplete();
+            }).catch(error=>{
+                this.uploadComplete();
+                console.error(error);
             });
-
-            this.inputFilesEl.value = '';
         })
     }
-    connectFirebase(){
 
+    uploadComplete(){
+
+        this.modalShow(false);
+        this.inputFilesEl.value = '';        
+        this.btnSendFileEl.disabled = true;
+    }
+
+    connectFirebase(){
+                // TODO: Add SDKs for Firebase products that you want to use
+      
+        // https://firebase.google.com/docs/web/setup#available-libraries
+      
+      
+        // Your web app's Firebase configuration
+      
+        const firebaseConfig = {
+      
+          apiKey: "AIzaSyD7sblgk9Hz6Ny-rxknDe5d3x47xfnp6Hk",
+      
+          authDomain: "dropbox-clone-581d4.firebaseapp.com",
+      
+          databaseURL: "https://dropbox-clone-581d4-default-rtdb.firebaseio.com",
+      
+          projectId: "dropbox-clone-581d4",
+      
+          storageBucket: "dropbox-clone-581d4.appspot.com",
+      
+          messagingSenderId: "35292174429",
+      
+          appId: "1:35292174429:web:9cc746bf106a34ec4bd5b4"
+      
+        };
+      
+      
+        // Initialize Firebase
+      
+        firebase.initializeApp(firebaseConfig);
          
     
     }
@@ -304,4 +342,4 @@ class DropBoxController {
     }
 
 }
-
+    
