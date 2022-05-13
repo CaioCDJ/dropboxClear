@@ -194,16 +194,24 @@ class DropBoxController {
         this.inputFilesEl.addEventListener('change', event => {
 
             this.btnSendFileEl.disabled = true;
-            this.UploadTask(event.target.files).then(responses => {
-                responses.forEach(resp=>{
-                    
-                    this.getFirebaseRef().push().set(resp.files['input-file']);
-                });
 
+            console.log(event.target.files);
+            this.UploadTask(event.target.files).then(responses => {          
+                
+                responses.forEach(resp=>{
+                    console.log(resp);
+                    this.getFirebaseRef().push().set({
+                        originalFilename: resp.name,
+                        mimetype: resp.contentType,
+                        filepath: resp.fullPath,
+                        size: resp.size
+                    });
+                });            
                 this.uploadComplete();
+
             }).catch(error=>{
                 this.uploadComplete();
-                console.error(error);
+                console.log(error);
             });
         })
     }
@@ -293,18 +301,36 @@ class DropBoxController {
         let promises = [];
 
         [...files].forEach(file => {
- 
-            let formData = new FormData();
-            formData.append('input-file', file);
+            
+            promises.push(new Promise((resolve, reject)=>{
 
-            promises.push(this.ajax('/upload','POST',formData,()=>{
+                let fileRef = firebase.storage().ref(this.currentFolder.join('/')).child(file.name);
+
+                let task = fileRef.put(file);
+
+                task.on('state_changed',snapshot=>{
+                    
+                    this.uploadProgress({
+                        loaded:snapshot.bytesTransferred,
+                        total: snapshot.totalBytes
+                    },file);
                 
-                this.uploadProgress(Event, file);
-                
-                },()=>{
-            
-                    this.startUploadTime = Date.now();
-            
+                    console.log(snapshot);
+
+                }, error=>{
+                    console.log(error);
+                    reject(error);
+
+                }, ()=>{
+                  
+                    fileRef.getMetadata().then(metadata=>{
+
+                            resolve(metadata);
+                        }).catch(err=>{
+                            reject(err);
+                    });
+                    
+                })
             }));
         });
         return Promise.all(promises);
