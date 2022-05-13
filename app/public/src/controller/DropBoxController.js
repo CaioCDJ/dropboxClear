@@ -43,12 +43,24 @@ class DropBoxController {
             let file = JSON.parse(li.dataset.file);
             let key = li.dataset.key;
 
-            let formData = new FormData();
+            promises.push(new Promise((resolve,reject)=>{
 
-            formData.append('path',file.filepath)
-            formData.append('key',key);
+                let fileRef = firebase.storage().ref(this.currentFolder.join('/')).child(file.originalFilename);
 
-            promises.push(this.ajax('/file','DELETE',formData));
+                fileRef.delete().then(()=>{
+
+                    resolve({
+                        fields:{
+                            key
+                        }
+                    });
+
+                }).catch(err=>{
+                    
+                    reject(err);
+                })
+
+            }));
         });
 
         return Promise.all(promises);
@@ -144,7 +156,7 @@ class DropBoxController {
                 })
 
             }).catch(error=>{
-                console.log(error);
+                console.error(error);
             });
         });
 
@@ -195,11 +207,10 @@ class DropBoxController {
 
             this.btnSendFileEl.disabled = true;
 
-            console.log(event.target.files);
             this.UploadTask(event.target.files).then(responses => {          
                 
                 responses.forEach(resp=>{
-                    console.log(resp);
+
                     this.getFirebaseRef().push().set({
                         originalFilename: resp.name,
                         mimetype: resp.contentType,
@@ -211,7 +222,7 @@ class DropBoxController {
 
             }).catch(error=>{
                 this.uploadComplete();
-                console.log(error);
+                console.error(error);
             });
         })
     }
@@ -315,10 +326,8 @@ class DropBoxController {
                         total: snapshot.totalBytes
                     },file);
                 
-                    console.log(snapshot);
-
                 }, error=>{
-                    console.log(error);
+                    console.error(error);
                     reject(error);
 
                 }, ()=>{
