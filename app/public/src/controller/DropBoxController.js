@@ -668,7 +668,13 @@ class DropBoxController {
                 break
                 
                 default:
-                    window.open('/file?path='+ file.filepath);
+                    let filePathRef = firebase.storage().ref().child(file.filepath);
+                            
+                    filePathRef.getDownloadURL().then(url => {
+                        window.open(url);
+                    }).catch(error => {
+                        console.error(error);
+                    });
             }
         });
 
